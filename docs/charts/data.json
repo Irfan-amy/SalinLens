@@ -1,0 +1,30 @@
+{
+  "_about": "Numbers behind the README charts. Measured, not estimated; see notes per block. Regenerate charts with: python3 docs/charts/make_charts.py",
+  "accuracy": {
+    "metric": "mean Jaccard of the detected page vs. the labelled page after undoing perspective (higher is better)",
+    "sets": ["SmartDoc 2015 bg04: white paper on a white desk", "SmartDoc 2015 bg05: cluttered desk, stacked sheets, cable across the page"],
+    "classic_opencv": [0.642, 0.184],
+    "salinlens": [0.951, 0.839],
+    "notes": "classic_opencv = contour pipeline (gray, blur, Canny, dilate/erode, biggest 4-point contour), all frames of the unseen backgrounds. salinlens = shipped model C0 + 0.25*HN + 0.5*MIDV, every 10th frame of the same videos (dev set; weights were blended using this set, so it is slightly optimistic)."
+  },
+  "heldout": {
+    "metric": "hull IoU, 8 photos labelled before any model ran, scored once (test2)",
+    "photos": ["t1", "t2", "t3", "t4", "t5", "t6", "t7 (steep angle)", "t8"],
+    "salinlens": [0.98, 0.93, 0.82, 0.96, 0.99, 0.94, 0.65, 0.93],
+    "mean": 0.898,
+    "failures_below_0_5": 0
+  },
+  "apk": {
+    "total_mb": 19.9,
+    "note": "arm64-v8a release APK, compressed sizes inside the zip, model included",
+    "parts_mb": [["Native libraries (ONNX Runtime, Lynx engine, text and graphics)", 13.69], ["Edge-detection model", 3.34], ["App and library code (dex)", 2.26], ["Icons, layouts, resources", 0.46], ["UI bundle (all screens)", 0.09]]
+  },
+  "latency": {
+    "note": "onnxruntime 1.32 CPU on an Apple-silicon Mac, 300 runs after 20 warm-up, input 1x3x192x320 float32. A desktop proxy: phones are slower. Not yet measured on a phone.",
+    "threads": [1, 2, 4],
+    "p50_ms": [9.33, 4.54, 3.18],
+    "p95_ms": [9.72, 5.09, 4.53],
+    "app_threads": 2,
+    "live_budget_ms": 60
+  }
+}
