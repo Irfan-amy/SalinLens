@@ -1,0 +1,23 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SalinLens web preview</title>
+<link rel="stylesheet" href="/web-core/static/css/client.css">
+<style>
+  html,body{margin:0;height:100%;background:#2a2d30}
+  body{display:flex;align-items:center;justify-content:center;font-family:Roboto,"Helvetica Neue",Arial,sans-serif}
+  #frame{position:relative;overflow:hidden;background:#000;border-radius:0}
+  lynx-view{display:block;width:100%;height:100%}
+</style></head>
+<body><div id="frame"><lynx-view id="lv"></lynx-view></div>
+<script type="module">
+  import '/web-core/static/js/client.js';
+  import '/preview/elements.js';
+  const p = new URLSearchParams(location.search);
+  const w = +p.get('w') || 360, h = +p.get('h') || 640;
+  const f = document.getElementById('frame'); f.style.width = w + 'px'; f.style.height = h + 'px';
+  const lv = document.getElementById('lv');
+  lv.nativeModulesMap = { SalinNative: location.origin + `/preview/native-mock.js?${location.search.slice(1)}&o=${encodeURIComponent(location.origin)}` };
+  lv.setAttribute('url', '/dist/main.web.bundle');
+  window.__lv = lv;
+  lv.addEventListener('error', (e) => console.error('lynx-view error', e.detail ?? e));
+</script></body></html>

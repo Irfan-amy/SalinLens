@@ -1,0 +1,35 @@
+{
+  "name": "salinlens-ui",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "rspeedy build",
+    "typecheck": "tsc -p src --noEmit",
+    "build:web": "rspeedy build",
+    "preview": "rspeedy build && node preview/server.mjs",
+    "lab": "node preview/server.mjs",
+    "show": "bash scripts/show.sh",
+    "test:web": "rspeedy build && node preview/test.mjs",
+    "stress": "rspeedy build && node preview/stress.mjs"
+  },
+  "dependencies": {
+    "@lynx-js/react": "^0.129.3"
+  },
+  "devDependencies": {
+    "@lynx-js/lynx-core": "^0.1.4",
+    "@lynx-js/react-rsbuild-plugin": "^0.22.3",
+    "@lynx-js/rspeedy": "^0.18.6",
+    "@lynx-js/types": "^4.1.0",
+    "@lynx-js/web-core": "^0.26.8",
+    "@lynx-js/web-elements": "^0.12.18",
+    "@lynx-js/web-platform-rsbuild-plugin": "^0.1.2",
+    "@types/react": "^19.2.18",
+    "playwright-core": "^1.65.1",
+    "tslib": "^2.9.1",
+    "typescript": "^6.0.3"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

@@ -1,0 +1,15 @@
+import { chromium } from 'playwright-core';
+import { serve } from './server.mjs';
+import fs from 'node:fs'; import os from 'node:os'; import path from 'node:path';
+const cache = path.join(os.homedir(), 'Library/Caches/ms-playwright');
+const exe = fs.readdirSync(cache).filter((d) => d.startsWith('chromium_headless_shell-')).sort().pop();
+const { srv, port } = await serve(0);
+const b = await chromium.launch({ executablePath: path.join(cache, exe, 'chrome-headless-shell-mac-arm64/chrome-headless-shell') });
+const pg = await b.newPage({ viewport: { width: 400, height: 700 } });
+pg.on('console', (m) => console.log('[console]', m.type(), m.text().slice(0, 300)));
+pg.on('pageerror', (e) => console.log('[pageerror]', e.message.slice(0, 300)));
+pg.on('requestfailed', (r) => console.log('[reqfail]', r.url()));
+await pg.goto(`http://127.0.0.1:${port}/?w=360&h=640`);
+await pg.waitForTimeout(4000);
+await pg.screenshot({ path: 'preview/out/smoke.png' });
+await b.close(); srv.close();

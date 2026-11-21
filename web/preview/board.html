@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SalinLens UI board</title>
+<style>
+  :root { color-scheme: dark; --bg: #0f1013; --panel: #1a1c20; --line: #2a2d33; --fg: #e8e9ec; --dim: #8b909a; --acc: #7fb2ff; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font: 13px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, system-ui, sans-serif; }
+  header { height: 50px; display: flex; align-items: center; gap: 18px; padding: 0 18px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  header b { font-size: 15px; white-space: nowrap; }
+  header span { color: var(--dim); white-space: nowrap; }
+  .grp { display: flex; gap: 6px; align-items: center; }
+  button { font: inherit; color: inherit; background: #23262c; border: 1px solid var(--line); border-radius: 8px; padding: 4px 10px; cursor: pointer; white-space: nowrap; }
+  button.on { border-color: var(--acc); color: var(--acc); }
+  .jump { display: flex; gap: 4px; overflow-x: auto; margin-left: auto; }
+  main { height: calc(100% - 50px); overflow: auto; display: flex; gap: 30px; padding: 26px 36px 40px; align-items: flex-start; background: radial-gradient(1400px 700px at 50% 0%, #1b1d22, #0d0e11); }
+  .slot { flex: none; }
+  .slot h4 { margin: 0 0 12px 4px; font-size: 13px; font-weight: 600; }
+  .slot h4 i { font-style: normal; color: var(--dim); font-weight: 500; margin-left: 8px; }
+  .phone { border-radius: 38px; overflow: hidden; background: #000; box-shadow: 0 0 0 8px #07080a, 0 0 0 9px #2a2d33, 0 30px 80px rgba(0,0,0,.55); }
+  .phone img { display: block; width: 100%; height: 100%; }
+  .empty { margin: 60px auto; text-align: center; color: var(--dim); max-width: 460px; }
+</style>
+</head>
+<body>
+<header>
+  <b>SalinLens UI board</b><span id="when">real app bundle, every screen, mocked native</span>
+  <div class="grp" id="sizes"></div>
+  <nav class="jump" id="jump"></nav>
+</header>
+<main id="stage"></main>
+<script type="module">
+  // The app's web layer (Lynx) only runs in Chromium, so this page shows screenshots taken by headless Chromium
+  // (node preview/board-shots.mjs, run by `pnpm show` and /show-ui). They look the same in any browser.
+  const $ = (s) => document.querySelector(s);
+  const { sizes, scenes } = await (await fetch('/preview/scenes.json')).json();
+  const idx = await fetch('/preview/out/board/index.json', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  const q = new URLSearchParams(location.search);
+  let size = sizes[q.get('size')] ? q.get('size') : Object.keys(sizes)[0];
+  if (idx) $('#when').textContent = 'screenshots from ' + new Date(idx.at).toLocaleTimeString() + ' · run pnpm show or /show-ui to refresh';
+  function render() {
+    const [w, h] = sizes[size]; const stage = $('#stage');
+    if (!idx) { stage.innerHTML = '<div class="empty">No screenshots yet. Run <code>cd web &amp;&amp; pnpm show</code> (or <code>/show-ui</code> in Claude Code).</div>'; }
+    else stage.innerHTML = scenes.map((s, i) => `<div class="slot" id="scr${i}"><h4>${s.name}${s.note ? `<i>${s.note}</i>` : ''}</h4><div class="phone" style="width:${w}px;height:${h}px"><img src="/preview/out/board/${encodeURIComponent(size)}/${i}.png?t=${idx.at}" width="${w}" height="${h}" alt="${s.name}"></div></div>`).join('');
+    $('#sizes').innerHTML = Object.keys(sizes).map((k) => `<button class="${k === size ? 'on' : ''}" data-k="${k}">${k}</button>`).join('');
+    $('#jump').innerHTML = scenes.map((s, i) => `<button data-i="${i}">${s.name}${s.note ? ' · ' + s.note : ''}</button>`).join('');
+  }
+  $('#sizes').onclick = (e) => { const b = e.target.closest('button'); if (b) { size = b.dataset.k; render(); } };
+  $('#jump').onclick = (e) => { const b = e.target.closest('button'); if (b) document.getElementById('scr' + b.dataset.i)?.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' }); };
+  render();
+</script>
+</body>
+</html>

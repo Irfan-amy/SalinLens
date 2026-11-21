@@ -1,0 +1,79 @@
+/* SalinLens design system. Scan = smoked glass over the camera; every other screen: pastel dawn backdrop,
+   plain translucent-white surfaces (no gradients), dark charcoal actions, SF type scale. */
+view { display: flex; flex-direction: column; box-sizing: border-box; }
+text, input { font-family: -apple-system, "SF Pro Text", "SF Pro Display", "Helvetica Neue", system-ui, Roboto, sans-serif; color: #000000; }
+
+.screen { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden; }
+.bg-dawn { background: linear-gradient(180deg, #B5D6D6 0%, #D5D9BC 30%, #EBD3A2 62%, #D6B7B1 100%); }
+.bg-warm { background: linear-gradient(180deg, #EEE7D4 0%, #EFD9B0 55%, #E0BEB2 100%); }
+
+/* type (Apple scale: large title 34, title2 22, headline 17 semibold, subhead 15, footnote 13) */
+.h1 { font-size: 34px; font-weight: 700; letter-spacing: 0.37px; line-height: 41px; color: #000000; }
+.h2 { font-size: 22px; font-weight: 700; letter-spacing: 0.35px; line-height: 28px; color: #000000; }
+.h3 { font-size: 17px; font-weight: 600; letter-spacing: -0.41px; line-height: 22px; color: #000000; }
+.body { font-size: 15px; font-weight: 400; letter-spacing: -0.24px; line-height: 20px; color: rgba(60,60,67,0.6); }
+.cap { font-size: 13px; font-weight: 400; letter-spacing: -0.08px; line-height: 18px; color: rgba(60,60,67,0.6); }
+
+/* surfaces */
+.glass { background-color: rgba(255,255,255,0.62); }
+.smoke { background-color: rgba(24,27,31,0.62); }
+.smoke-sheet { background-color: rgba(22,25,29,0.88); border-top-left-radius: 36px; border-top-right-radius: 36px; }
+.card { background-color: rgba(255,255,255,0.62); border-radius: 26px; }
+.sheet { background-color: rgba(255,255,255,0.66); border-top-left-radius: 34px; border-top-right-radius: 34px; }
+.seg-wrap { background-color: rgba(255,255,255,0.5); border-radius: 14px; padding: 3px; flex-direction: row; }
+.seg-on { background-color: rgba(255,255,255,0.95); box-shadow: 0px 1px 4px rgba(0,0,0,0.12); }
+.shadow-soft { box-shadow: 0px 8px 26px rgba(70,55,35,0.16); }
+
+/* press feedback (scale is driven on the main thread, spring easing here) */
+.press { transition: transform 200ms cubic-bezier(0.2, 0.9, 0.3, 1.35), opacity 160ms ease-out; }
+
+/* buttons */
+.circle-btn { width: 46px; height: 46px; border-radius: 23px; align-items: center; justify-content: center; }
+.pill-btn { height: 52px; border-radius: 26px; flex-direction: row; align-items: center; justify-content: center; padding-left: 26px; padding-right: 26px; }
+.pill-dark { background-color: #2A2926; }
+.pill-light { background-color: rgba(255,255,255,0.62); }
+.pill-text-light { font-size: 17px; font-weight: 600; letter-spacing: -0.41px; color: #FFFFFF; }
+.pill-text-dark { font-size: 17px; font-weight: 600; letter-spacing: -0.41px; color: #000000; }
+.chip { height: 36px; border-radius: 18px; padding-left: 16px; padding-right: 16px; align-items: center; justify-content: center; background-color: rgba(255,255,255,0.62); transition: background-color 220ms ease-out, transform 200ms cubic-bezier(0.2,0.9,0.3,1.35); }
+.chip-on { background-color: #2A2926; }
+.chip-text { font-size: 15px; font-weight: 600; letter-spacing: -0.24px; color: #000000; }
+.chip-text-on { color: #FFFFFF; }
+.badge { align-items: center; justify-content: center; }
+
+/* shutter */
+.shutter-halo { width: 98px; height: 98px; border-radius: 49px; background-color: rgba(255,255,255,0.28); align-items: center; justify-content: center; transition: background-color 300ms ease-out; }
+.shutter-halo-hot { background-color: rgba(47,107,255,0.45); animation: haloPulse 1400ms ease-in-out infinite; }
+.shutter-core { width: 74px; height: 74px; border-radius: 37px; background-color: #202428; align-items: center; justify-content: center; }
+
+/* keyframes */
+@keyframes enterUp { from { transform: translateY(46px); opacity: 0; } to { transform: translateY(0px); opacity: 1; } }
+@keyframes enterFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes enterScale { from { transform: scale(0.86); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes leaveDown { from { transform: translateY(0px); opacity: 1; } to { transform: translateY(60px); opacity: 0; } }
+@keyframes leaveFade { from { opacity: 1; } to { opacity: 0; } }
+@keyframes riseIn { from { transform: translateY(18px); opacity: 0; } to { transform: translateY(0px); opacity: 1; } }
+@keyframes popIn { 0% { transform: scale(0.4); opacity: 0; } 60% { transform: scale(1.12); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes haloPulse { 0% { transform: scale(1); } 50% { transform: scale(1.07); } 100% { transform: scale(1); } }
+@keyframes flashOut { from { opacity: 0.92; } to { opacity: 0; } }
+@keyframes shimmer { 0% { opacity: 0.35; } 50% { opacity: 0.75; } 100% { opacity: 0.35; } }
+@keyframes bob { 0% { transform: translateY(0px); } 50% { transform: translateY(-5px); } 100% { transform: translateY(0px); } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes logoIn { 0% { transform: scale(0.55) rotate(-8deg); opacity: 0; } 65% { transform: scale(1.08) rotate(1deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+@keyframes cardL { from { transform: translateY(70px) rotate(0deg); opacity: 0; } to { transform: translateY(14px) rotate(-9deg); opacity: 1; } }
+@keyframes cardC { from { transform: translateY(80px); opacity: 0; } to { transform: translateY(0px); opacity: 1; } }
+@keyframes cardR { from { transform: translateY(70px) rotate(0deg); opacity: 0; } to { transform: translateY(14px) rotate(9deg); opacity: 1; } }
+
+.a-up { animation: enterUp 420ms cubic-bezier(0.2, 0.85, 0.25, 1) both; }
+.a-fade { animation: enterFade 300ms ease-out both; }
+.a-scale { animation: enterScale 380ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+.a-leave { animation: leaveDown 260ms cubic-bezier(0.4, 0, 1, 1) both; }
+.a-leave-fade { animation: leaveFade 240ms ease-in both; }
+.a-rise { animation: riseIn 520ms cubic-bezier(0.2, 0.85, 0.25, 1) both; }
+.a-pop { animation: popIn 520ms cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+.d1 { animation-delay: 60ms; } .d2 { animation-delay: 130ms; } .d3 { animation-delay: 200ms; } .d4 { animation-delay: 270ms; } .d5 { animation-delay: 340ms; }
+.spin { animation: spin 900ms linear infinite; }
+.shimmer { animation: shimmer 1200ms ease-in-out infinite; }
+
+/* single / double line clamp with ellipsis (text-maxline attribute alone was not enough: the 2nd line still painted) */
+.one-line { white-space: nowrap; text-overflow: ellipsis; overflow: hidden; -webkit-line-clamp: 1; }
+.two-line { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; text-overflow: ellipsis; overflow: hidden; }

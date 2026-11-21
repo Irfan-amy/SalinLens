@@ -1,0 +1,6 @@
+-keep class com.lynx.** { *; }
+-keep class com.salinlens.** { *; }
+-keep class ai.onnxruntime.** { *; }
+-dontwarn com.lynx.**
+-dontwarn org.chromium.**
+-dontwarn com.google.errorprone.annotations.**

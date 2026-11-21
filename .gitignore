@@ -1,0 +1,13 @@
+node_modules/
+dist/
+build/
+.gradle/
+local.properties
+*.log
+.DS_Store
+*.apk
+android/app/src/main/assets/main.lynx.bundle
+web/preview/out/
+
+# edge-detection weights are not distributed (see README > Edge-detection model)
+android/app/src/main/assets/docnet.onnx

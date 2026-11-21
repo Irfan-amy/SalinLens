@@ -1,0 +1,13 @@
+{
+  "sizes": { "360×780": [360, 780], "320×568": [320, 568], "412×915": [412, 915], "390×844": [390, 844] },
+  "scenes": [
+    { "name": "Scan · camera", "note": "empty strip", "query": "", "steps": [] },
+    { "name": "Scan · camera", "note": "with pages", "query": "", "steps": [["salinOpenImage", "/fixtures/doc.jpg"], ["salinOpenImage", "/fixtures/doc.jpg"], ["salinSelect", 0]] },
+    { "name": "Scan · adjust", "note": "page 2 selected", "query": "", "steps": [["salinOpenImage", "/fixtures/doc.jpg"], ["salinOpenImage", "/fixtures/doc.jpg"]] },
+    { "name": "Camera unavailable", "note": "", "query": "&cam=bad", "steps": [] },
+    { "name": "Save as", "note": "", "query": "", "steps": [["salinGo", "export"]] },
+    { "name": "Saved", "note": "", "query": "", "steps": [["salinGo", "saved"]] },
+    { "name": "Item", "note": "", "query": "", "steps": [["salinGo", "item"]] },
+    { "name": "Your Saved", "note": "", "query": "", "steps": [["salinNav", "gallery"]] }
+  ]
+}

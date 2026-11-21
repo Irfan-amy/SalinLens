@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Glass lab</title>
+<link rel="stylesheet" href="/preview/lab.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs id="defs"></defs></svg>
+
+<header class="top">
+  <div class="brand">Glass lab <span>SalinLens controls, liquid glass. Browser preview of the look, not the native render.</span></div>
+  <nav class="tabs" id="modeTabs">
+    <button data-mode="play" class="on">Playground</button>
+    <button data-mode="vars">Variations</button>
+  </nav>
+</header>
+
+<main>
+  <aside class="panel" id="panel">
+    <section>
+      <h3>Backdrop</h3>
+      <div class="seg" id="bdSeg"></div>
+      <label class="file">Use your own photo <input type="file" id="bdFile" accept="image/*"></label>
+    </section>
+    <section>
+      <h3>Screen</h3>
+      <div class="seg" id="sceneSeg"></div>
+    </section>
+    <section id="presetSec">
+      <h3>Presets</h3>
+      <div class="chips" id="presets"></div>
+    </section>
+    <section id="sliders"></section>
+    <section class="btns">
+      <button id="copy">Copy params</button>
+      <button id="reset">Reset</button>
+    </section>
+    <p class="hint">Drag any glass piece over the backdrop to watch it refract. Chromium-based browsers only (uses SVG displacement inside <code>backdrop-filter</code>).</p>
+  </aside>
+
+  <section class="stage" id="stage"></section>
+</main>
+
+<script type="module" src="/preview/lab.js"></script>
+</body>
+</html>
