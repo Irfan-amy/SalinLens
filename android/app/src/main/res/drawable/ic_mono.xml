@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- monochrome layer for Android 13+ themed icons: same mark, single colour, the launcher tints it -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#00000000" android:strokeColor="#000000" android:strokeWidth="4.52" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M32.47,44.17V32.47H44.17 M63.83,32.47H75.53V44.17 M75.53,63.83V75.53H63.83 M44.17,75.53H32.47V63.83 M38.93,54H68.51" />
+</vector>
