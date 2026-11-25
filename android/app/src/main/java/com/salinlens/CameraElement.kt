@@ -97,7 +97,7 @@ class CameraElement(ctx: LynxContext) : LynxUI<CameraElement.CameraLayout>(ctx) 
 
         fun capture(cb: (String?, String?) -> Unit) {
             val c = capture ?: return cb(null, "camera not active")
-            val f = File(context.cacheDir, "cap_${System.nanoTime()}.jpg")
+            val f = Drafts.photo(context, "cap")
             c.takePicture(ImageCapture.OutputFileOptions.Builder(f).build(), ContextCompat.getMainExecutor(context), object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(r: ImageCapture.OutputFileResults) = cb(f.absolutePath, null)
                 override fun onError(e: ImageCaptureException) = cb(null, e.message)

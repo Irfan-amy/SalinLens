@@ -41,7 +41,7 @@ for (const [w, h] of VIEWPORTS) {
   // regression: nothing invisible may sit on top of the top-bar buttons (torch / Your Saved) - an overlay once swallowed their taps
   const topBarFree = async (when) => {
     const bad = await page.evaluate(() => { const r = document.querySelector('#lv').shadowRoot; const out = [];
-      for (const n of ['flashOff', 'flash', 'trash', 'layers']) { for (const el of [...r.querySelectorAll('salin-icon')].filter((x) => x.getAttribute('name') === n)) { const bb = el.getBoundingClientRect(); if (!bb.width) continue; const t = r.elementFromPoint(bb.x + bb.width / 2, bb.y + bb.height / 2); if (!(t && (t === el || el.contains(t) || t.contains(el)))) out.push(n); } } return out; });
+      for (const n of ['flashOff', 'flash', 'trash', 'filePlus', 'layers']) { for (const el of [...r.querySelectorAll('salin-icon')].filter((x) => x.getAttribute('name') === n)) { const bb = el.getBoundingClientRect(); if (!bb.width) continue; const t = r.elementFromPoint(bb.x + bb.width / 2, bb.y + bb.height / 2); if (!(t && (t === el || el.contains(t) || t.contains(el)))) out.push(n); } } return out; });
     if (bad.length) { failed++; console.log(`✗ ${vp} top-bar buttons blocked ${when}: ${bad.join(', ')}`); }
   };
   try {
@@ -49,6 +49,29 @@ for (const [w, h] of VIEWPORTS) {
     await page.locator('.shutter-core').first().click({ force: true }); await page.waitForTimeout(1500); await topBarFree('after a capture');
     await open('&cam=bad'); await shot('camera-unavailable'); await topBarFree('with camera unavailable');
     await open(); await emit('salinNav', 'gallery'); await page.waitForTimeout(700); await shot('gallery');
+    // drafts: the (v) beside the title switches Saved <-> Drafts; tapping a draft reopens it on the camera screen
+    await open('&drafts=2'); await emit('salinNav', 'gallery'); await page.waitForTimeout(700); await tap('Your Saved'); await page.waitForTimeout(500); await shot('gallery-menu');
+    await tap('Drafts'); await page.waitForTimeout(700); await shot('gallery-drafts');
+    await tap('Draft · 2 pages'); await page.waitForTimeout(900);
+    if (!(await page.getByText('Continue · 2 pages').count())) { failed++; console.log(`✗ ${vp} resuming a draft did not restore its pages`); }
+    // a shot is already a draft while its edges are still being found (detect never answers here)
+    await open('&hang=detect'); await page.locator('.shutter-core').first().click({ force: true }); await page.waitForTimeout(1200);
+    await emit('salinNav', 'gallery'); await page.waitForTimeout(700); await tap('Your Saved'); await tap('Drafts'); await page.waitForTimeout(700);
+    if (!(await page.getByText('Draft', { exact: true }).count())) { failed++; console.log(`✗ ${vp} photo not in drafts during edge detection`); }
+    // "New scan" parks the current scan in Drafts and empties the strip; the next shot makes a second draft
+    await open(); await page.locator('.shutter-core').first().click({ force: true }); await page.waitForTimeout(1200); await shot('camera-one-page');
+    await topBarFree('with New scan'); await page.locator('salin-icon[name="filePlus"]').click(); await page.waitForTimeout(600);
+    if (await page.getByText('Continue', { exact: true }).count()) { failed++; console.log(`✗ ${vp} New scan did not empty the strip`); }
+    await page.locator('.shutter-core').first().click({ force: true }); await page.waitForTimeout(1200);
+    await emit('salinNav', 'gallery'); await page.waitForTimeout(700); await tap('Your Saved'); await tap('Drafts'); await page.waitForTimeout(700);
+    const kept = await page.getByText('Draft', { exact: true }).count();
+    if (kept !== 2) { failed++; console.log(`✗ ${vp} expected 2 drafts after New scan, got ${kept}`); }
+    // trashing the draft of the scan in progress empties the camera strip too
+    await open(); await page.locator('.shutter-core').first().click({ force: true }); await page.waitForTimeout(1200);
+    await emit('salinNav', 'gallery'); await page.waitForTimeout(700); await tap('Your Saved'); await tap('Drafts'); await page.waitForTimeout(700);
+    await page.locator('salin-icon[name="trash"]').first().click(); await page.waitForTimeout(500); await page.locator('salin-icon[name="back"]').first().click(); await page.waitForTimeout(700);
+    if (await page.getByText('Continue', { exact: true }).count()) { failed++; console.log(`✗ ${vp} trashed draft still on the camera screen`); }
+    await open(); await emit('salinNav', 'gallery'); await page.waitForTimeout(700);
     await tap('PDF'); await page.waitForTimeout(700); await shot('item'); // first card = the long-named 3-file seed (tapping its PDF tag: the clipped title is not clickable)
     // multi-page session: import two photos (each opens for adjusting), tap thumbnail 1, back to camera, continue
     await open(); await emit('salinOpenImage', '/fixtures/doc.jpg'); await page.waitForTimeout(1200); await shot('adjust-1page');

@@ -22,6 +22,8 @@ class SalinModule(context: Context) : LynxModule(context) {
     private fun ok(cb: Callback, o: JSONObject = JSONObject()) = cb.invoke(o.put("ok", true).toString())
     private fun fail(cb: Callback, e: Throwable) = cb.invoke(JSONObject().put("ok", false).put("error", e.message ?: e.javaClass.simpleName).toString())
     private fun bg(cb: Callback, block: () -> JSONObject) = Host.io.execute { try { ok(cb, block()) } catch (e: Throwable) { fail(cb, e) } }
+    /** like bg, on the single draft thread: writes land in the order the UI sent them */
+    private fun inOrder(cb: Callback, block: () -> JSONObject) = Host.drafts.execute { try { ok(cb, block()) } catch (e: Throwable) { fail(cb, e) } }
     private fun quad(a: JSONArray?) = a?.let { FloatArray(8) { i -> a.getDouble(i).toFloat() } }
 
     @LynxMethod fun env(cb: Callback) {
@@ -61,7 +63,7 @@ class SalinModule(context: Context) : LynxModule(context) {
     @LynxMethod fun rotate(path: String, quadJson: String, cb: Callback) = bg(cb) {
         val bmp = Imaging.loadUpright(path, 4096) ?: error("cannot read image")
         val rb = Imaging.rotate(bmp, 90)
-        val f = File(app.cacheDir, "rot_${System.nanoTime()}.jpg"); Imaging.saveJpeg(rb, f, 95); rb.recycle()
+        val f = Drafts.photo(app, "rot"); Imaging.saveJpeg(rb, f, 95); rb.recycle()
         val q = Imaging.rotateQuad(quad(JSONArray(quadJson))!!, 1)
         JSONObject().put("path", f.absolutePath).put("quad", JSONArray(q.map { it.toDouble() }))
     }
@@ -93,6 +95,11 @@ class SalinModule(context: Context) : LynxModule(context) {
         require(n > 0) { "Could not save" }
         JSONObject().put("count", n)
     }
+
+    /** Drafts: scans that were captured but not saved yet. */
+    @LynxMethod fun drafts(cb: Callback) = bg(cb) { JSONObject().put("items", Drafts.list(app)) }
+    @LynxMethod fun draftSave(id: String, pagesJson: String, cb: Callback) = inOrder(cb) { Drafts.save(app, id, JSONArray(pagesJson)); JSONObject() }
+    @LynxMethod fun draftRemove(id: String, cb: Callback) = inOrder(cb) { Drafts.remove(app, id); JSONObject() }
 
     @LynxMethod fun gallery(cb: Callback) = bg(cb) { JSONObject().put("items", Store.list(app)) }
     @LynxMethod fun remove(id: String, cb: Callback) = bg(cb) { Store.delete(app, id); JSONObject() }

@@ -5,9 +5,10 @@ const DOC = '/fixtures/doc.jpg';        // raw camera photo (desk around the pap
 const PAGE = '/fixtures/page.jpg';      // what the real app returns after warp: the deskewed page only
 const THUMB = '/fixtures/page_thumb.jpg';
 const now = Date.now();
-const q = new URL(import.meta.url).searchParams; // ?w=&h= come from the host page; test flags: slow=ms, fail=a,b, denied=1, empty=1, many=N
+const q = new URL(import.meta.url).searchParams; // ?w=&h= come from the host page; test flags: slow=ms, fail=a,b, hang=a,b (never answers), denied=1, empty=1, many=N
 const SLOW = +q.get('slow') || 0;
 const FAIL = new Set((q.get('fail') || '').split(',').filter(Boolean));
+const HANG = new Set((q.get('hang') || '').split(',').filter(Boolean));
 const NAMES = ['Service Agreement — Maple Ridge Marketing final signed copy', 'Receipt', 'Scan Nov 18'];
 const seed = (q.get('empty') ? [] : Array.from({ length: +q.get('many') || 3 }, (_, i) => [NAMES[i] || `Scan ${i + 1} 📄 ${'x'.repeat(i % 5)}`, now - 3600e3 * (i * 20 + 1)]))
 .map(([name, ts], i) => ({
@@ -17,6 +18,7 @@ const seed = (q.get('empty') ? [] : Array.from({ length: +q.get('many') || 3 }, 
 
 export default function () {
   const items = [...seed];
+  const drafts = q.get('drafts') ? Array.from({ length: +q.get('drafts') }, (_, i) => ({ id: 'd' + i, ts: now - 600e3 * (i + 1), pages: Array.from({ length: i + 1 }, () => ({ path: DOC, quad: QUAD })) })) : [];
   const ok = (cb, o = {}) => cb(JSON.stringify({ ok: true, ...o }));
   const base = {
     // (module is registered as NativeModules.SalinNative by the lynx-view nativeModulesMap key)
@@ -35,6 +37,9 @@ export default function () {
         items.unshift(item); ok(cb, { item });
       },
       gallery: (cb) => ok(cb, { items }),
+      drafts: (cb) => ok(cb, { items: drafts }),
+      draftSave: (id, json, cb) => { const d = { id, ts: Date.now(), pages: JSON.parse(json) }; const i = drafts.findIndex((x) => x.id === id); if (i >= 0) drafts.splice(i, 1); drafts.unshift(d); ok(cb); },
+      draftRemove: (id, cb) => { const i = drafts.findIndex((x) => x.id === id); if (i >= 0) drafts.splice(i, 1); ok(cb); },
       remove: (id, cb) => { const i = items.findIndex((x) => x.id === id); if (i >= 0) items.splice(i, 1); ok(cb); },
       targets: (cb) => ok(cb, { targets: { whatsapp: 'com.whatsapp', tiktok: 'com.zhiliaoapp.musically', instagram: 'com.instagram.android', telegram: null, facebook: 'com.facebook.katana', messenger: 'com.facebook.orca', x: null, snapchat: null, discord: null, gmail: 'com.google.android.gm', signal: null, pinterest: null, reddit: null, threads: null, line: null, viber: null } }),
       saveFile: (p, cb) => ok(cb, { count: JSON.parse(p).length }),
@@ -46,7 +51,7 @@ export default function () {
   const api = {};
   for (const k of Object.keys(base)) {
     api[k] = (k === 'haptic') ? base[k] : (k === 'exit') ? () => { fetch(q.get('o') + '/__exit?rid=' + (q.get('rid') || '')).catch(() => {}); } : (...a) => {
-      const cb = a.pop(); const run = () => (FAIL.has(k) ? cb(JSON.stringify({ ok: false, error: 'mock failure: ' + k })) : base[k](...a, cb));
+      const cb = a.pop(); if (HANG.has(k)) return; const run = () => (FAIL.has(k) ? cb(JSON.stringify({ ok: false, error: 'mock failure: ' + k })) : base[k](...a, cb));
       SLOW ? setTimeout(run, SLOW) : run();
     };
   }

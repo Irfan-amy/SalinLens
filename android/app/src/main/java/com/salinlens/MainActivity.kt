@@ -77,7 +77,7 @@ class MainActivity : ComponentActivity() {
         val cb = pickCb; pickCb = null
         if (uri == null) { cb?.invoke(null); return }
         Host.io.execute {
-            val f = File(cacheDir, "imp_${System.nanoTime()}.jpg")
+            val f = Drafts.photo(this, "imp")
             try { contentResolver.openInputStream(uri)?.use { i -> f.outputStream().use { i.copyTo(it) } }; cb?.invoke(f.absolutePath) } catch (_: Exception) { cb?.invoke(null) }
         }
     }

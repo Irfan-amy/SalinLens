@@ -1,5 +1,5 @@
 import { createContext, useContext } from '@lynx-js/react';
-import type { Item, Mode, PageSrc } from './native.js';
+import type { Draft, Item, Mode, PageSrc } from './native.js';
 
 export type Route =
   | { name: 'camera' }
@@ -7,8 +7,8 @@ export type Route =
   | { name: 'item'; item: Item; saved: boolean }
   | { name: 'gallery' };
 
-/** Hooks the root (scan) screen registers: hardware back and "the scan is finished, drop the session". */
-export interface RootHooks { back?: () => boolean; clear?: () => void }
+/** Hooks the root (scan) screen registers: hardware back, "the scan is finished, drop the session" and "open this draft". */
+export interface RootHooks { back?: () => boolean; clear?: () => void; resume?: (d: Draft) => void; activeDraft?: () => string }
 
 export interface Nav {
   push: (r: Route) => void;

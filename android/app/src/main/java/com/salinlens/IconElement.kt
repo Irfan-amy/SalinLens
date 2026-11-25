@@ -48,6 +48,7 @@ class IconElement(ctx: LynxContext) : LynxUI<IconElement.IconView>(ctx) {
             "back" to "M15 5l-7 7 7 7",
             "chevron" to "M9 5l7 7-7 7",
             "share" to "M12 15V3 M7 8l5-5 5 5 M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6",
+            "filePlus" to "M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z M14 3v5h5 M12 11v6 M9 14h6",
             "file" to "M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z M14 3v5h5 M9 13h6 M9 17h4",
             "trash" to "M4 7h16 M10 11v6 M14 11v6 M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12 M9 7V4h6v3",
             "plus" to "M12 5v14 M5 12h14",

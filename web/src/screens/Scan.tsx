@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from '@lynx-js/react';
 import { native, rotQuad } from '../native.js';
-import type { Page, Quad } from '../native.js';
+import type { Draft, Page, PageSrc, Quad } from '../native.js';
 import { useEnv, useNav, useReady } from '../nav.js';
 import { CircleBtn, Icon, Press } from '../ui.js';
 
@@ -28,13 +28,11 @@ export function Scan() {
   const [toast, setToast] = useState('');
   const [pages, setPages] = useState<Page[]>([]);
   const [sel, setSel] = useState(CAM);
-  const [grab, setGrab] = useState(false);
-  const [touched, setTouched] = useState(false);
   const [rotating, setRotating] = useState(false);
-  const [msg, setMsg] = useState('');
   const pagesRef = useRef(pages); pagesRef.current = pages;
   const selRef = useRef(sel); selRef.current = sel;
   const lastBack = useRef(0);
+  const draftId = useRef(''); // the scan in progress is auto-saved as a draft under this id until it is saved or discarded
 
   const ask = useCallback((prompt: boolean) => {
     native.cameraPermission(prompt).then((r) => { setPerm(r.granted ? 'granted' : 'denied'); ready(); }).catch(() => { setPerm('denied'); ready(); });
@@ -64,28 +62,49 @@ export function Scan() {
   // hardware back / "scan finished" come from the app shell
   nav.root.current.back = () => {
     if (selRef.current !== CAM) { select(CAM); return true; }
-    if (pagesRef.current.length > 0 && Date.now() - lastBack.current > 2500) { lastBack.current = Date.now(); say('Press back again to discard this scan'); return true; }
+    if (pagesRef.current.length > 0 && Date.now() - lastBack.current > 2500) { lastBack.current = Date.now(); say('Saved as a draft. Press back again to exit'); return true; }
     return false;
   };
-  nav.root.current.clear = () => { setPages([]); setSel(CAM); };
+  nav.root.current.clear = () => { if (draftId.current) native.draftRemove(draftId.current).catch(() => {}); draftId.current = ''; setPages([]); setSel(CAM); };
+  nav.root.current.activeDraft = () => draftId.current;
+  nav.root.current.resume = (d: Draft) => {
+    draftId.current = d.id;
+    setPages(d.pages.map((p) => ({ id: pageId++, path: p.path, quad: p.quad, detected: null, found: true })));
+    setSel(CAM);
+  };
+
+  // auto-save as draft, so closing the app mid-scan loses nothing
+  const persist = (list: PageSrc[]) => {
+    if (list.length === 0) { if (draftId.current) { native.draftRemove(draftId.current).catch(() => {}); draftId.current = ''; } return; }
+    if (!draftId.current) draftId.current = Date.now().toString(36);
+    native.draftSave(draftId.current, list.map((p) => ({ path: p.path, quad: p.quad }))).catch(() => {});
+  };
+  // a page added, removed or rotated is written at once; crop drags fire continuously, so those wait until the finger settles
+  const savedPaths = useRef('');
+  useEffect(() => {
+    const paths = pages.map((p) => p.path).join('|');
+    if (paths !== savedPaths.current) { savedPaths.current = paths; persist(pages); return; }
+    const t = setTimeout(() => persist(pages), 300);
+    return () => clearTimeout(t);
+  }, [pages]);
 
   const say = (m: string) => { setToast(m); setTimeout(() => setToast(''), 2200); };
 
   const select = (i: number) => {
-    setSel(i); setGrab(false); setTouched(false); native.haptic('tick');
-    const pg = pagesRef.current[i];
-    setMsg(pg ? (pg.found ? 'Edges found' : 'No edges — drag corners') : '');
+    setSel(i); native.haptic('tick');
+    if (pagesRef.current[i]?.found === false) say('No edges — drag corners');
   };
   const patch = (i: number, o: Partial<Page>) => setPages((ps) => ps.map((p, k) => (k === i ? { ...p, ...o } : p)));
 
   const addPage = async (path: string, open: boolean) => {
     try {
+      persist([...pagesRef.current, { path, quad: FULL }]); // keep the photo before edge detection: the app can be closed while it runs
       const d = await native.detect(path);
       const pg: Page = { id: pageId++, path, quad: d.quad, detected: d.found ? d.quad : null, found: d.found };
       const at = pagesRef.current.length;
       setPages((ps) => [...ps, pg]);
-      if (open) { setSel(at); setGrab(false); setTouched(false); setMsg(d.found ? 'Edges found' : 'No edges — drag corners'); }
-    } catch (e) { say('Could not open that photo'); }
+      if (open) { setSel(at); if (!d.found) say('No edges — drag corners'); }
+    } catch (e) { persist(pagesRef.current); say('Could not open that photo'); } // unreadable photo: take it back out of the draft
     setBusy(false);
   };
 
@@ -99,6 +118,15 @@ export function Scan() {
     try { const r = await native.pickImage(); if (r.path) { setBusy(true); await addPage(r.path, true); } } catch (e) { say('Could not import'); }
   };
 
+  // shortcut: park the scan on screen in Drafts and start an empty one
+  const newScan = () => {
+    if (busy || pagesRef.current.length === 0) return; // a photo still being processed would land in the new scan
+    persist(pagesRef.current); // flush a crop drag that is still waiting to be written
+    draftId.current = ''; // forget the id first, so emptying the strip does not remove the draft
+    setPages([]); setSel(CAM);
+    say('Kept in Drafts. New scan started');
+  };
+
   // ---- adjust tools (act on the selected page)
   const pg = sel >= 0 ? pages[sel] : undefined;
   const rotate = async () => {
@@ -109,18 +137,18 @@ export function Scan() {
   };
   const autoFit = async () => {
     if (!pg) return; const at = sel;
-    native.haptic('tap'); setMsg('Looking again…');
+    native.haptic('tap');
     try {
       const d = await native.detect(pg.path);
-      if (d.found) { patch(at, { quad: d.quad, detected: d.quad, found: true }); setMsg('Snapped to the page'); native.haptic('success'); } else setMsg('No edge — try Full page');
-    } catch (_) { setMsg('Something went wrong'); }
+      if (d.found) { patch(at, { quad: d.quad, detected: d.quad, found: true }); native.haptic('success'); } else say('No edge — try Full page');
+    } catch (_) { say('Something went wrong'); }
   };
-  const fullPage = () => { if (!pg) return; patch(sel, { quad: FULL }); setTouched(false); setMsg('Whole photo selected'); };
-  const resetQuad = () => { if (pg?.detected) { patch(sel, { quad: pg.detected }); setTouched(false); } };
+  const fullPage = () => { if (pg) patch(sel, { quad: FULL }); };
+  const resetQuad = () => { if (pg?.detected) patch(sel, { quad: pg.detected }); };
   const removePage = () => {
     if (!pg) return; native.haptic('heavy');
     const left = pages.filter((_, k) => k !== sel);
-    setPages(left); setGrab(false);
+    setPages(left);
     if (left.length === 0) setSel(CAM); else select(Math.min(sel, left.length - 1));
   };
 
@@ -134,7 +162,6 @@ export function Scan() {
   const sheetH = 14 + (th + 8) + 12 + rowH + (pages.length > 0 ? cH + 12 : 0) + env.bottom + 14;
   const tight = env.h - sheetH - env.top < 330; // little room above the sheet (small phone + page strip): drop the icon from the camera-unavailable card
   const editing = sel >= 0 && pg !== undefined;
-  const status = busy ? (editing ? 'Working…' : 'Finding the edges…') : editing ? (touched ? 'Looks good' : msg) : hot ? 'Page found' : pages.length ? 'Add another page' : 'Point at a page';
 
   return (
     <view className="screen" style={{ backgroundColor: '#101214' }}>
@@ -145,8 +172,7 @@ export function Scan() {
         <view className="screen bg-warm">
           <view style={{ position: 'absolute', left: '0px', right: '0px', top: `${env.top + 10}px`, bottom: `${sheetH + 4}px` }}>
             <salin-crop key={pg!.id} style={{ width: '100%', height: '100%' }} src={pg!.path} quad={JSON.stringify(pg!.quad)}
-              bindchange={(e) => { patch(sel, { quad: JSON.parse(e.detail.quad) }); setTouched(true); }}
-              bindgrab={(e) => setGrab(e.detail.value)} />
+              bindchange={(e) => patch(sel, { quad: JSON.parse(e.detail.quad) })} />
           </view>
         </view>
       )}
@@ -171,19 +197,18 @@ export function Scan() {
       {/* top bar */}
       <view style={{ position: 'absolute', left: '16px', right: '16px', top: `${env.top + 10}px`, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }} className="a-fade d3">
         {editing ? <CircleBtn smoke icon="trash" onTap={removePage} /> : <CircleBtn smoke icon={torch ? 'flash' : 'flashOff'} onTap={() => setTorch(!torch)} />}
-        <view style={{ flex: 1, alignItems: 'center', marginLeft: '10px', marginRight: '10px' }}>
-          <view className="smoke" style={{ height: '38px', borderRadius: '19px', paddingLeft: '14px', paddingRight: '16px', flexDirection: 'row', alignItems: 'center', maxWidth: '100%', opacity: editing && grab ? 0 : 1, transition: 'opacity 200ms' }}>
-            <view style={{ width: '9px', height: '9px', borderRadius: '5px', marginRight: '9px', backgroundColor: busy ? '#E7A93B' : hot || editing ? '#2F6BFF' : '#B5B0A6', transition: 'background-color 300ms' }} />
-            <text className="chip-text one-line" text-maxline="1" style={{ color: SMOKE_TXT }}>{status}</text>
-          </view>
-        </view>
-        <view>
+        <view style={{ flexDirection: 'row', alignItems: 'center' }}>
+          {pages.length > 0 && (
+            <view style={{ marginRight: '12px', opacity: busy ? 0.38 : 1 }}><CircleBtn smoke icon="filePlus" onTap={newScan} /></view>
+          )}
+          <view>
           <CircleBtn smoke icon="layers" onTap={() => nav.push({ name: 'gallery' })} />
           {count > 0 && (
             <view style={{ position: 'absolute', right: '-3px', top: '-3px', minWidth: '19px', height: '19px', borderRadius: '10px', backgroundColor: '#FBF7F0', alignItems: 'center', justifyContent: 'center', paddingLeft: '4px', paddingRight: '4px' }}>
               <text style={{ fontSize: '11px', fontWeight: '800', color: '#202428' }}>{count}</text>
             </view>
           )}
+          </view>
         </view>
       </view>
 

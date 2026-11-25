@@ -6,6 +6,8 @@ export interface FileEntry { fmt: 'pdf' | 'jpg' | 'png'; path: string; size: num
 export interface Item { id: string; name: string; ts: number; w: number; h: number; pages?: number; thumb: string; files: FileEntry[] }
 /** one page of the scan session: the photo + the crop quad the user settled on */
 export interface PageSrc { path: string; quad: Quad }
+/** a scan that was captured but not saved yet */
+export interface Draft { id: string; ts: number; pages: PageSrc[] }
 export interface Page extends PageSrc { id: number; detected: Quad | null; found: boolean }
 export type Mode = 'original' | 'color' | 'magic' | 'lighten' | 'crisp' | 'scanner' | 'eco' | 'gray' | 'bw';
 
@@ -34,6 +36,9 @@ export const native = {
   exportScan: (o: { pages: PageSrc[]; mode: Mode; name: string; formats: string[] }) => call<{ item: Item }>('export', JSON.stringify(o)),
   gallery: () => call<{ items: Item[] }>('gallery'),
   remove: (id: string) => call('remove', id),
+  drafts: () => call<{ items: Draft[] }>('drafts'),
+  draftSave: (id: string, pages: PageSrc[]) => call('draftSave', id, JSON.stringify(pages)),
+  draftRemove: (id: string) => call('draftRemove', id),
   targets: () => call<{ targets: Record<string, string | null> }>('targets'),
   saveFile: (paths: string[]) => call<{ count: number }>('saveFile', JSON.stringify(paths)),
   share: (paths: string[], pkg: string) => call('share', JSON.stringify(paths), pkg),

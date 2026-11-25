@@ -14,4 +14,5 @@ object Host {
     var camera: WeakReference<CameraElement.CameraLayout>? = null
     val main = Handler(Looper.getMainLooper())
     val io = Executors.newFixedThreadPool(2) { Thread(it, "salin-io").apply { priority = Thread.NORM_PRIORITY - 1 } }
+    val drafts = Executors.newSingleThreadExecutor { Thread(it, "salin-drafts") }
 }
